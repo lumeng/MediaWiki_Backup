@@ -166,7 +166,15 @@ function export_images {
 function backup_mwdir {
     MWDIR_BACKUP=$BACKUP_PREFIX"-mwdir.tar.gz"
     echo "Compressing MediaWiki installation directory to $MWDIR_BACKUP"
-    tar -zcf "$MWDIR_BACKUP" "$INSTALL_DIR" 
+	INSTALL_DIR_PARENT="$(dirname "$INSTALL_DIR")"
+	INSTALL_DIR_BASENAME="$(basename "$INSTALL_DIR")"
+    if [ -d $INSTALL_DIR_PARENT ];
+	then
+        cd "$INSTALL_DIR_PARENT"
+	    tar -zcf "$MWDIR_BACKUP" "$INSTALL_DIR_BASENAME"
+	else
+        echo "$INSTALL_DIR_PARENT is not a valid path, fail to backup MediaWiki dir"
+	fi
 }
 
 
