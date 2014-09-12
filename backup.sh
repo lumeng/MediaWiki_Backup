@@ -52,6 +52,19 @@ function get_options {
     BACKUP_DIR=$(cd $BACKUP_DIR; pwd -P)
     echo "Backing up to $BACKUP_DIR"
 
+	BACKUP_FILENAME_PREFIX="backup_"$(date +%Y%m%d)
+	BACKUP_SUBDIR="$BACKUP_SUBDIR/$BACKUP_FILENAME_PREFIX"
+    if [ ! -d $BACKUP_SUBDIR ]; then
+        mkdir --parents $BACKUP_SUBDIR;
+        if [ ! -d $BACKUP_SUBDIR ]; then
+            echo -n "Backup sub-directory $BACKUP_SUBDIR does not exist" 1>&2
+            echo " and could not be created" 1>&2
+            exit 1;
+        fi
+    fi
+    BACKUP_SUBDIR=$(cd $BACKUP_SUBDIR; pwd -P)
+    echo "Backing up to $BACKUP_SUBDIR"
+
 }
 
 ################################################################################
@@ -148,6 +161,16 @@ function export_images {
 }
 
 ################################################################################
+## Back up the entire MediaWiki installation directory, which includes potentially
+## customized configuration file LocalSettings.php, extensions, etc.
+function backup_mwdir {
+    MWDIR_BACKUP=$BACKUP_PREFIX"-mwdir.tar.gz"
+    echo "Compressing MediaWiki installation directory to $MWDIR_BACKUP"
+    tar -zcf "$MWDIR_BACKUP" "$INSTALL_DIR" 
+}
+
+
+################################################################################
 ## Main
 
 # Preparation
@@ -156,11 +179,12 @@ get_localsettings_vars
 toggle_read_only
 
 # Exports
-BACKUP_PREFIX=$BACKUP_DIR/$(date +%Y-%m-%d)
+BACKUP_PREFIX=$BACKUP_SUBDIR/$BACKUP_FILENAME_PREFIX
 export_sql
 export_xml
 export_images
-
+backup_mwdir
+ 
 toggle_read_only
 
 ## End main
