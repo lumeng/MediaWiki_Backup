@@ -53,7 +53,7 @@ function get_options {
     echo "Backing up to $BACKUP_DIR"
 
 	BACKUP_FILENAME_PREFIX="backup_"$(date +%Y%m%d)
-	BACKUP_SUBDIR="$BACKUP_SUBDIR/$BACKUP_FILENAME_PREFIX"
+	BACKUP_SUBDIR="$BACKUP_DIR/$BACKUP_FILENAME_PREFIX"
     if [ ! -d $BACKUP_SUBDIR ]; then
         mkdir --parents $BACKUP_SUBDIR;
         if [ ! -d $BACKUP_SUBDIR ]; then
