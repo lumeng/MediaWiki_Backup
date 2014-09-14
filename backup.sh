@@ -1,12 +1,16 @@
 #!/bin/bash
 #
-# Summary: Backup MediaWiki instances installed on Linux and using MySQL.
+# Summary: Backup MediaWiki instances including databases, files, HTML pages.
 #
 # Author:
-# * Meng Lu <lumeng.dev@gmail.com>
-# * 201409: adapted from Sam Wilson https://github.com/samwilson/MediaWiki_Backup
+# Meng Lu <lumeng.dev@gmail.com>
+# (adapated from Sam Wilson https://github.com/samwilson/MediaWiki_Backup)
 #
-
+# History:
+# * 20140914: added ability to automatically backup Mediawiki instances configured to use SQLite databases instead of MySQL databases
+# * 20140914: added ability to automatically write a log entry into a log file into the backup path each time the script is run
+# * 20140904: let a backup instance be created in a sub-directory under the backup path specified as -d as there are in general several resultant backup files created for one backup operation.
+# * 201409: adapted from Sam Wilson https://github.com/samwilson/MediaWiki_Backup
 
 ################################################################################
 ## Output command usage
@@ -89,21 +93,31 @@ function get_options {
 function get_localsettings_vars {
     LOCALSETTINGS="$INSTALL_DIR/LocalSettings.php"
 
-    DB_HOST=`grep '^\$wgDBserver' $LOCALSETTINGS | cut -d\" -f2`
-    DB_NAME=`grep '^\$wgDBname' $LOCALSETTINGS  | cut -d\" -f2`
-    DB_USER=`grep '^\$wgDBuser' $LOCALSETTINGS  | cut -d\" -f2`
-    DB_PASS=`grep '^\$wgDBpassword' $LOCALSETTINGS  | cut -d\" -f2`
-    logprint "Logging in as $DB_USER to $DB_HOST to backup $DB_NAME"
+	DB_TYPE=`grep '^\$wgDBtype' $LOCALSETTINGS  | cut -d\" -f2`
 
-    # Try to extract default character set from LocalSettings.php
-    # but default to binary
-    DBTableOptions=$(grep '$wgDBTableOptions' $LOCALSETTINGS)
-    CHARSET=$(logprint $DBTableOptions | sed -E 's/.*CHARSET=([^"]*).*/\1/')
-    if [ -z $CHARSET ]; then
-        CHARSET="binary"
-    fi
+	DB_NAME=`grep '^\$wgDBname' $LOCALSETTINGS  | cut -d\" -f2`
 
-    logprint "Character set in use: $CHARSET"
+	if [ "$DB_TYPE" != 'sqlite' ]; then
+		logprint "The MediaWiki instance uses MySQL database, backup using mysqldump"
+		DB_HOST=`grep '^\$wgDBserver' $LOCALSETTINGS | cut -d\" -f2`
+		DB_USER=`grep '^\$wgDBuser' $LOCALSETTINGS  | cut -d\" -f2`
+		DB_PASS=`grep '^\$wgDBpassword' $LOCALSETTINGS  | cut -d\" -f2`
+		logprint "Logging in as $DB_USER to $DB_HOST to backup $DB_NAME"
+
+		# Try to extract default character set from LocalSettings.php
+		# but default to binary
+		DBTableOptions=$(grep '$wgDBTableOptions' $LOCALSETTINGS)
+		CHARSET=$(logprint $DBTableOptions | sed -E 's/.*CHARSET=([^"]*).*/\1/')
+		if [ -z $CHARSET ]; then
+			CHARSET="binary"
+		fi
+
+		logprint "Character set in use: $CHARSET"
+	else
+		logprint "The MediaWiki instance uses SQLite database, backup using file copying and compressing"
+    	SQLITE_DATA_DIR=`grep '^\$wgSQLiteDataDir' $LOCALSETTINGS  | cut -d\" -f2`
+        SQLITE_FILE=$SQLITE_DATA_DIR/$DB_NAME".sqlite"
+	fi
 }
 
 ################################################################################
@@ -152,10 +166,24 @@ function export_sql {
     MySQL_RET_CODE=$?
     if [ $MySQL_RET_CODE -ne 0 ]; then
         ERR_NUM=3
-        logprint "MySQL Dump failed! (return code of MySQL: $MySQL_RET_CODE)" 1>&2
+        echo "MySQL Dump failed! (return code of MySQL: $MySQL_RET_CODE)" 1>&2
         exit $ERR_NUM
     fi
 }
+
+################################################################################
+## Backup *.sqlite file
+function backup_sqlite {
+    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite.gz"
+    logprint "Dumping database $SQLITE_FILE to $SQLITE_FILE_BACKUP"
+	if [ -f $SQLITE_FILE ]; then
+        tar -zcf "$SQLITE_FILE_BACKUP" "$SQLITE_FILE"
+	else
+		echo "SQLite database file $SQLITE_FILE does not exist!" 1>&2
+		exit 1
+	fi
+}
+
 
 ################################################################################
 ## XML
@@ -203,9 +231,13 @@ get_options $@
 get_localsettings_vars
 toggle_read_only
 
-# Exports
+# Backup
 BACKUP_PREFIX=$BACKUP_SUBDIR/$BACKUP_FILENAME_PREFIX
-export_sql
+if [ "$DB_TYPE" != 'sqlite' ]; then
+    export_sql
+else
+	backup_sqlite
+fi
 export_xml
 export_images
 backup_mwdir
