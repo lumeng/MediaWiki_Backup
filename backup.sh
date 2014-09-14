@@ -177,7 +177,8 @@ function backup_sqlite {
     SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite.gz"
     logprint "Dumping database $SQLITE_FILE to $SQLITE_FILE_BACKUP"
 	if [ -f $SQLITE_FILE ]; then
-        tar -zcf "$SQLITE_FILE_BACKUP" "$SQLITE_FILE"
+        cd "$SQLITE_DATA_DIR"
+        tar -zcf "$SQLITE_FILE_BACKUP" $DB_NAME".sqlite"
 	else
 		echo "SQLite database file $SQLITE_FILE does not exist!" 1>&2
 		exit 1
