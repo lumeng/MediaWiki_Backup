@@ -137,7 +137,7 @@ function toggle_read_only {
         then
             sed -i "s/?>/\n$MSG/ig" "$LOCALSETTINGS"
         else
-            logprint "$MSG" >> "$LOCALSETTINGS"
+            echo "$MSG" >> "$LOCALSETTINGS"
         fi 
 
     # Remove read-only message
@@ -148,6 +148,45 @@ function toggle_read_only {
 
     fi
 }
+
+
+################################################################################
+## Add $wgReadOnly to LocalSettings.php
+function toggle_read_only_on {
+    local MSG="\$wgReadOnly = 'Backup in progress.';"
+    local LOCALSETTINGS="$INSTALL_DIR/LocalSettings.php"
+
+    # If already read-only
+    grep "$MSG" "$LOCALSETTINGS" > /dev/null
+    if [ $? -ne 0 ]; then
+
+        logprint "Entering read-only mode"
+        grep "?>" "$LOCALSETTINGS" > /dev/null
+        if [ $? -eq 0 ];
+        then
+            sed -i "s/?>/\n$MSG/ig" "$LOCALSETTINGS"
+        else
+            echo "$MSG" >> "$LOCALSETTINGS"
+        fi 
+    fi
+}
+
+
+################################################################################
+## Add $wgReadOnly to LocalSettings.php
+## Kudos to http://www.mediawiki.org/wiki/User:Megam0rf/WikiBackup
+function toggle_read_only_off {
+    local MSG="\$wgReadOnly = 'Backup in progress.';"
+    local LOCALSETTINGS="$INSTALL_DIR/LocalSettings.php"
+
+    grep "$MSG" "$LOCALSETTINGS" > /dev/null
+    if [ ! $? -ne 0 ]; then
+        # If already read-only, remove read-only configuration
+        logprint "Returning to write mode"
+        sed -i "s/$MSG//ig" "$LOCALSETTINGS"
+    fi
+}
+
 
 ################################################################################
 ## Dump database to SQL
@@ -230,7 +269,7 @@ function backup_mwdir {
 # Preparation
 get_options $@
 get_localsettings_vars
-toggle_read_only
+toggle_read_only_on
 
 # Backup
 BACKUP_PREFIX=$BACKUP_SUBDIR/$BACKUP_FILENAME_PREFIX
@@ -243,7 +282,7 @@ export_xml
 export_images
 backup_mwdir
  
-toggle_read_only
+toggle_read_only_off
 
 ## End main
 ################################################################################
