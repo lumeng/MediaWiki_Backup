@@ -1,9 +1,10 @@
 #!/bin/bash
 #
-# MediaWiki backup and archiving script for installations on Linux using MySQL.
+# Summary: Backup MediaWiki instances installed on Linux and using MySQL.
 #
-# Copyright Sam Wilson 2013 CC-BY-SA
-# http://samwilson.id.au/public/MediaWiki
+# Author:
+# * Meng Lu <lumeng.dev@gmail.com>
+# * 201409: adapted from Sam Wilson https://github.com/samwilson/MediaWiki_Backup
 #
 
 
@@ -213,5 +214,3 @@ toggle_read_only
 
 ## End main
 ################################################################################
-
-# eh? what's this do? exec > /dev/null
