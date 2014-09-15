@@ -7,11 +7,26 @@
 # (adapated from Sam Wilson https://github.com/samwilson/MediaWiki_Backup)
 #
 # History:
-# * 20140914: added ability to automatically backup Mediawiki instances configured to use SQLite databases instead of MySQL databases
-# * 20140914: added ability to automatically write a log entry into a log file into the backup path each time the script is run
-# * 20140904: let a backup instance be created in a sub-directory under the backup path specified as -d as there are in general several resultant backup files created for one backup operation.
-# * 201409: adapted from Sam Wilson https://github.com/samwilson/MediaWiki_Backup
-
+#
+# * 20140914: added ability to automatically backup Mediawiki
+# instances configured to use SQLite databases instead of MySQL
+# databases
+#
+# * 20140914: added ability to automatically write a log entry into a
+# log file into the backup path each time the script is run
+#
+# * 20140913: let a backup instance be created in a sub-directory
+# under the backup path specified as -d as there are in general
+# several resultant backup files created for one backup operation.
+#
+# * 20140913: let a backup operation also backup the installation
+# directory of the MediaWiki instance, so LocalSettings.php and
+# extensions are backed up too.  TODO: this obviously is more than
+# what's necessary.
+#
+# * 201409: adapted from Sam Wilson
+# https://github.com/samwilson/MediaWiki_Backup
+#
 ################################################################################
 ## Output command usage
 function usage {
