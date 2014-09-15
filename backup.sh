@@ -107,7 +107,7 @@ function get_localsettings_vars {
 		# Try to extract default character set from LocalSettings.php
 		# but default to binary
 		DBTableOptions=$(grep '$wgDBTableOptions' $LOCALSETTINGS)
-		CHARSET=$(echo $DBTableOptions | sed -E 's/.*CHARSET=([^"]*).*/\1/')
+		CHARSET=$(echo $DBTableOptions | grep 'CHARSET' | sed -E 's/.*CHARSET=([^"]*).*/\1/')
 		if [ -z $CHARSET ]; then
 			CHARSET="binary"
 		fi
