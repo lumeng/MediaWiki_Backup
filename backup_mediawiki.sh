@@ -6,6 +6,9 @@
 # Meng Lu <lumeng.dev@gmail.com>
 # (adapated from Sam Wilson https://github.com/samwilson/MediaWiki_Backup)
 #
+# TODO:
+# * Use *.7z (7z) format instead of *.bz2 format (pbzip2)
+#
 # History:
 #
 # * 20140914: added ability to automatically backup Mediawiki
@@ -101,6 +104,27 @@ function get_options {
     logprint "Backing up to $BACKUP_SUBDIR"
 
 }
+
+
+## Set options for tar to use bz2 format for high compression rate
+## and pbzip2 for paralellism
+if hash pbzip2 2>/dev/null; then
+	ZIP_PROGRAM=pbzip2
+    TAR_OPTIONS="--use-compress-program=pbzip2"
+	ZIP_FILENAME_EXT=".bz2"
+	TAR_FILENAME_EXT=".tar.bz2"
+elif has pigz 2>/dev/null; then
+	ZIP_PROGRAM=pigz
+    TAR_OPTIONS="--use-compress-program=pigz"
+	ZIP_FILENAME_EXT=".gz"
+	TAR_FILENAME_EXT=".tar.gz"
+else
+	ZIP_PROGRAM=gzip
+    TAR_OPTIONS="--use-compress-program=gzip"
+	ZIP_FILENAME_EXT=".gz"
+	TAR_FILENAME_EXT=".tar.gz"
+fi
+
 
 
 ################################################################################
@@ -207,14 +231,14 @@ function toggle_read_only_off {
 ## Dump database to SQL
 ## Kudos to https://github.com/milkmiruku/backup-mediawiki
 function export_sql {
-    SQLFILE=$BACKUP_PREFIX"-database.sql.gz"
+    SQLFILE=$BACKUP_PREFIX"-database.sql"$ZIP_FILENAME_EXT
     logprint "Dumping database to $SQLFILE"
     nice -n 19 mysqldump --single-transaction \
         --default-character-set=$CHARSET \
         --host=$DB_HOST \
         --user=$DB_USER \
         --password=$DB_PASS \
-        $DB_NAME | gzip -9 > $SQLFILE
+        $DB_NAME | $ZIP_PROGRAM -9 > $SQLFILE
 
     # Ensure dump worked
     MySQL_RET_CODE=$?
@@ -228,11 +252,11 @@ function export_sql {
 ################################################################################
 ## Backup *.sqlite file
 function backup_sqlite {
-    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite.gz"
+    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite"$TAR_FILENAME_EXT
     logprint "Dumping database $SQLITE_FILE to $SQLITE_FILE_BACKUP"
 	if [ -f $SQLITE_FILE ]; then
         cd "$SQLITE_DATA_DIR"
-        tar -zcf "$SQLITE_FILE_BACKUP" $DB_NAME".sqlite"
+        tar --use-compress-program=pbzip2 -cf "$SQLITE_FILE_BACKUP" $DB_NAME".sqlite"
 	else
 		echo "SQLite database file $SQLITE_FILE does not exist!" 1>&2
 		exit 1
@@ -244,34 +268,34 @@ function backup_sqlite {
 ## XML
 ## Kudos to http://brightbyte.de/page/MediaWiki_backup
 function export_xml {
-    XML_DUMP=$BACKUP_PREFIX"-pages.xml.gz"
+    XML_DUMP=$BACKUP_PREFIX"-pages.xml"$ZIP_FILENAME_EXT
     logprint "Exporting XML to $XML_DUMP"
     cd "$INSTALL_DIR/maintenance"
     php -d error_reporting=E_ERROR dumpBackup.php --quiet --full \
-    | gzip -9 > "$XML_DUMP"
+    | $ZIP_PROGRAM -9 > "$XML_DUMP"
 }
 
 ################################################################################
 ## Export the images directory
 function export_images {
-    IMG_BACKUP=$BACKUP_PREFIX"-images.tar.gz"
+    IMG_BACKUP=$BACKUP_PREFIX"-images"$TAR_FILENAME_EXT
     logprint "Compressing images to $IMG_BACKUP"
     cd "$INSTALL_DIR"
-    tar --exclude-vcs -zcf "$IMG_BACKUP" images
+    tar --use-compress-program=pbzip2 -cf "$IMG_BACKUP" images
 }
 
 ################################################################################
 ## Back up the entire MediaWiki installation directory, which includes potentially
 ## customized configuration file LocalSettings.php, extensions, etc.
 function backup_mwdir {
-    MWDIR_BACKUP=$BACKUP_PREFIX"-mwdir.tar.gz"
+    MWDIR_BACKUP=$BACKUP_PREFIX"-mwdir"$TAR_FILENAME_EXT
     logprint "Compressing MediaWiki installation directory to $MWDIR_BACKUP"
 	INSTALL_DIR_PARENT="$(dirname "$INSTALL_DIR")"
 	INSTALL_DIR_BASENAME="$(basename "$INSTALL_DIR")"
     if [ -d $INSTALL_DIR_PARENT ];
 	then
         cd "$INSTALL_DIR_PARENT"
-	    tar -zcf "$MWDIR_BACKUP" "$INSTALL_DIR_BASENAME"
+	    tar --use-compress-program=pbzip2 -cf "$MWDIR_BACKUP" "$INSTALL_DIR_BASENAME"
 	else
         logprint "$INSTALL_DIR_PARENT is not a valid path, fail to backup MediaWiki dir"
 	fi
