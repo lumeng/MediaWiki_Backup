@@ -267,6 +267,8 @@ function export_sql {
 ################################################################################
 ## Backup *.sqlite file
 function backup_sqlite {
+
+	# alternatively back up *.sqlite file by simple copying without locking the database
 #    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite"$ZIP_FILENAME_EXT
 #    logprint "Dumping database $SQLITE_FILE to $SQLITE_FILE_BACKUP"
 #	if [ -f $SQLITE_FILE ]; then
@@ -279,14 +281,21 @@ function backup_sqlite {
 #	fi
 
 	# dump using the MediaWiki maitenance script
-    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite"$ZIP_FILENAME_EXT
-    SQLITE_FILE_BACKUP_TMP=$BACKUP_PREFIX"-database__tmp.sqlite"
+    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite"
     cd "$INSTALL_DIR/maintenance"
-	$PHP_BIN sqlite.php --backup-to $SQLITE_FILE_BACKUP_TMP
-	cd $BACKUP_SUBDIR
-    $ZIP_PROGRAM -9 $SQLITE_FILE_BACKUP_TMP > $SQLITE_FILE_BACKUP
-	if [ -f $SQLITE_FILE_BACKUP_TMP -a -f $SQLITE_FILE_BACKUP ]; then
-		rm $SQLITE_FILE_BACKUP_TMP
+	$PHP_BIN sqlite.php --backup-to $SQLITE_FILE_BACKUP
+
+    # Ensure dump worked
+    SQLite_RET_CODE=$?
+    if [ $SQLite_RET_CODE -ne 0 ]; then
+        ERR_NUM=3
+        echo "SQLite Dump failed! (return code of SQLite: $SQLite_RET_CODE)" 1>&2
+        exit $ERR_NUM
+    fi
+
+	if [ -f $SQLITE_FILE_BACKUP ]; then
+	    cd $BACKUP_SUBDIR
+        $ZIP_PROGRAM -9 $SQLITE_FILE_BACKUP
 	else
         echo "SQLite Dump failed! (return code of SQLite: $SQLite_RET_CODE)" 1>&2
 	fi
