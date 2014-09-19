@@ -279,7 +279,7 @@ function backup_sqlite {
 #	fi
 
 	# dump using the MediaWiki maitenance script
-    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite"#$ZIP_FILENAME_EXT
+    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite"
     #SQLITE_FILE_BACKUP_TMP=$BACKUP_PREFIX"-database__tmp.sqlite"
     cd "$INSTALL_DIR/maintenance"
 	$PHP_BIN sqlite.php --backup-to $SQLITE_FILE_BACKUP
