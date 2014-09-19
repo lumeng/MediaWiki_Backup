@@ -285,7 +285,7 @@ function backup_sqlite {
 	$PHP_BIN sqlite.php --backup-to $SQLITE_FILE_BACKUP_TMP
 	cd $BACKUP_SUBDIR
     $ZIP_PROGRAM -9 $BACKUP_FILENAME_PREFIX"-database__tmp.sqlite" > $SQLITE_FILE_BACKUP
-	if [ -f $SQLITE_FILE_BACKUP_TMP && -f $SQLITE_FILE_BACKUP ]; then
+	if [ -f $SQLITE_FILE_BACKUP_TMP -a -f $SQLITE_FILE_BACKUP ]; then
 		rm $SQLITE_FILE_BACKUP_TMP
 	else
         echo "SQLite Dump failed! (return code of SQLite: $SQLite_RET_CODE)" 1>&2
