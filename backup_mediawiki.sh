@@ -284,7 +284,7 @@ function backup_sqlite {
     cd "$INSTALL_DIR/maintenance"
 	$PHP_BIN sqlite.php --backup-to $SQLITE_FILE_BACKUP_TMP
 	cd $BACKUP_SUBDIR
-    $ZIP_PROGRAM -9 $SQLITE_FILE_BACKUP $BACKUP_FILENAME_PREFIX"-database__tmp.sqlite"
+    $ZIP_PROGRAM -9 $BACKUP_FILENAME_PREFIX"-database__tmp.sqlite" > $SQLITE_FILE_BACKUP
 	if [ -f $SQLITE_FILE_BACKUP_TMP && -f $SQLITE_FILE_BACKUP ]; then
 		rm $SQLITE_FILE_BACKUP_TMP
 	else
