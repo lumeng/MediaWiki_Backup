@@ -37,6 +37,10 @@ function usage {
     echo "Usage: $NAME -d backup/dir -w installation/dir"
 }
 
+function versioncheck {
+    echo "Version check: php 5.3+"
+}
+
 ################################################################################
 ## Output command usage
 function logprint {
@@ -56,6 +60,17 @@ function get_options {
             w) INSTALL_DIR=$OPTARG;;
         esac
     done
+
+	## Check versions of executable programs
+    if hash /usr/local/php54/bin/php 2>/dev/null; then
+	    PHP_BIN=/usr/local/php54/bin/php
+	elif hash /usr/local/php53/bin/php 2>/dev/null; then
+	    PHP_BIN=/usr/local/php53/bin/php
+	else
+        PHP_BIN=php
+		versioncheck; exit 1;
+	fi
+		
 
     ## Check BKP_DIR
     if [ -z $BACKUP_DIR ]; then
@@ -252,14 +267,28 @@ function export_sql {
 ################################################################################
 ## Backup *.sqlite file
 function backup_sqlite {
-    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite"$TAR_FILENAME_EXT
-    logprint "Dumping database $SQLITE_FILE to $SQLITE_FILE_BACKUP"
-	if [ -f $SQLITE_FILE ]; then
-        cd "$SQLITE_DATA_DIR"
-        tar --use-compress-program=pbzip2 -cf "$SQLITE_FILE_BACKUP" $DB_NAME".sqlite"
+#    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite"$ZIP_FILENAME_EXT
+#    logprint "Dumping database $SQLITE_FILE to $SQLITE_FILE_BACKUP"
+#	if [ -f $SQLITE_FILE ]; then
+#        cd "$SQLITE_DATA_DIR"
+#		$ZIP_PROGRAM -9 "$SQLITE_FILE_BACKUP" $DB_NAME".sqlite" 
+#		#tar --use-compress-program=pbzip2 -cf "$SQLITE_FILE_BACKUP" $DB_NAME".sqlite"
+#	else
+#		echo "SQLite database file $SQLITE_FILE does not exist!" 1>&2
+#		exit 1
+#	fi
+
+	# dump using the MediaWiki maitenance script
+    SQLITE_FILE_BACKUP=$BACKUP_PREFIX"-database.sqlite"$ZIP_FILENAME_EXT
+    SQLITE_FILE_BACKUP_TMP=$BACKUP_PREFIX"-database__tmp.sqlite"
+    cd "$INSTALL_DIR/maintenance"
+	$PHP_BIN sqlite.php --backup-to $SQLITE_FILE_BACKUP_TMP
+	cd $BACKUP_SUBDIR
+    $ZIP_PROGRAM -9 $SQLITE_FILE_BACKUP $BACKUP_FILENAME_PREFIX"-database__tmp.sqlite"
+	if [ -f $SQLITE_FILE_BACKUP_TMP && -f $SQLITE_FILE_BACKUP ]; then
+		rm $SQLITE_FILE_BACKUP_TMP
 	else
-		echo "SQLite database file $SQLITE_FILE does not exist!" 1>&2
-		exit 1
+        echo "SQLite Dump failed! (return code of SQLite: $SQLite_RET_CODE)" 1>&2
 	fi
 }
 
@@ -271,7 +300,7 @@ function export_xml {
     XML_DUMP=$BACKUP_PREFIX"-pages.xml"$ZIP_FILENAME_EXT
     logprint "Exporting XML to $XML_DUMP"
     cd "$INSTALL_DIR/maintenance"
-    php -d error_reporting=E_ERROR dumpBackup.php --quiet --full \
+    $PHP_BIN -d error_reporting=E_ERROR dumpBackup.php --quiet --full \
     | $ZIP_PROGRAM -9 > "$XML_DUMP"
 }
 
