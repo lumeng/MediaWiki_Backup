@@ -66,11 +66,12 @@ function get_options {
 	    PHP_BIN=/usr/local/php54/bin/php
 	elif hash /usr/local/php53/bin/php 2>/dev/null; then
 	    PHP_BIN=/usr/local/php53/bin/php
-	else
+	elif [ `php -r 'print_r(version_compare(phpversion(), "5.3"));'` == 1 ]; then
         PHP_BIN=php
+	else
 		versioncheck; exit 1;
 	fi
-		
+    ## TODO check mysqldump maintenance/sqlite.php, etc.		
 
     ## Check BKP_DIR
     if [ -z $BACKUP_DIR ]; then
