@@ -101,12 +101,12 @@ function get_options {
         exit 1;
     fi
     INSTALL_DIR=$(cd $INSTALL_DIR; pwd -P)
-    logprint "Backing up wiki installed in $INSTALL_DIR"$(date)
+    logprint $(date) " Backing up wiki installed in $INSTALL_DIR..."
 
     # start backing up
     logprint "Backing up to $BACKUP_DIR "
 
-	BACKUP_FILENAME_PREFIX="backup_"$(date +%Y%m%d)
+	BACKUP_FILENAME_PREFIX="backup_"$(date +%Y%m%d%H%m%s%z)
 	BACKUP_SUBDIR="$BACKUP_DIR/$BACKUP_FILENAME_PREFIX"
     if [ ! -d $BACKUP_SUBDIR ]; then
         mkdir --parents $BACKUP_SUBDIR;
