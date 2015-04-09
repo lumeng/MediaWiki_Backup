@@ -101,7 +101,7 @@ function get_options {
         exit 1;
     fi
     INSTALL_DIR=$(cd $INSTALL_DIR; pwd -P)
-    logprint "Backing up wiki installed in $INSTALL_DIR"$(date)
+    logprint "Backing up wiki installed in $INSTALL_DIR "$(date)
 
     # start backing up
     logprint "Backing up to $BACKUP_DIR "
