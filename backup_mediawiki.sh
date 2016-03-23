@@ -74,33 +74,33 @@ function get_options {
     ## TODO check mysqldump maintenance/sqlite.php, etc.		
 
     ## Check BKP_DIR
-    if [ -z $BACKUP_DIR ]; then
+    if [ -z "$BACKUP_DIR" ]; then
         echo "Please provide a backup directory with -d" 1>&2
         usage; exit 1;
     fi
-    if [ ! -d $BACKUP_DIR ];
+    if [ ! -d "$BACKUP_DIR" ];
 	then
-        mkdir --parents $BACKUP_DIR;
-        if [ ! -d $BACKUP_DIR ]; then
+        mkdir --parents "$BACKUP_DIR";
+        if [ ! -d "$BACKUP_DIR" ]; then
             echo -n "Backup directory $BACKUP_DIR does not exist" 1>&2
             echo " and could not be created" 1>&2
             exit 1;
 		fi
 	else
-	    BACKUP_DIR=$(cd $BACKUP_DIR; pwd -P)
+	    BACKUP_DIR=$(cd "$BACKUP_DIR"; pwd -P)
 		LOG="$BACKUP_DIR/mediawiki_backup.log"
     fi
 
     ## Check WIKI_WEB_DIR
-    if [ -z $INSTALL_DIR ]; then
+    if [ -z "$INSTALL_DIR" ]; then
         echo "Please specify the wiki directory with -w" 1>&2
         usage; exit 1;
     fi
-    if [ ! -f $INSTALL_DIR/LocalSettings.php ]; then
+    if [ ! -f "$INSTALL_DIR/LocalSettings.php" ]; then
         echo "No LocalSettings.php found in $INSTALL_DIR" 1>&2
         exit 1;
     fi
-    INSTALL_DIR=$(cd $INSTALL_DIR; pwd -P)
+    INSTALL_DIR=$(cd "$INSTALL_DIR"; pwd -P)
     logprint $(date) " Backing up wiki installed in $INSTALL_DIR..."
 
     # start backing up
@@ -108,15 +108,15 @@ function get_options {
 
 	BACKUP_FILENAME_PREFIX="backup_"$(date +%Y%m%d%H%m%s%z)
 	BACKUP_SUBDIR="$BACKUP_DIR/$BACKUP_FILENAME_PREFIX"
-    if [ ! -d $BACKUP_SUBDIR ]; then
-        mkdir --parents $BACKUP_SUBDIR;
-        if [ ! -d $BACKUP_SUBDIR ]; then
+    if [ ! -d "$BACKUP_SUBDIR" ]; then
+        mkdir --parents "$BACKUP_SUBDIR";
+        if [ ! -d "$BACKUP_SUBDIR" ]; then
             echo -n "Backup sub-directory $BACKUP_SUBDIR does not exist" 1>&2
             echo " and could not be created" 1>&2
             exit 1;
         fi
     fi
-    BACKUP_SUBDIR=$(cd $BACKUP_SUBDIR; pwd -P)
+    BACKUP_SUBDIR=$(cd "$BACKUP_SUBDIR"; pwd -P)
     logprint "Backing up to $BACKUP_SUBDIR"
 
 }
@@ -171,7 +171,7 @@ function get_localsettings_vars {
 	else
 		logprint "The MediaWiki instance uses SQLite database, backup using file copying and compressing"
     	SQLITE_DATA_DIR=`grep '^\$wgSQLiteDataDir' $LOCALSETTINGS  | cut -d\" -f2`
-        SQLITE_FILE=$SQLITE_DATA_DIR/$DB_NAME".sqlite"
+        SQLITE_FILE="$SQLITE_DATA_DIR/${DB_NAME}.sqlite"
 	fi
 }
 
@@ -295,7 +295,7 @@ function backup_sqlite {
     fi
 
 	if [ -f $SQLITE_FILE_BACKUP ]; then
-	    cd $BACKUP_SUBDIR
+	    cd "$BACKUP_SUBDIR"
         $ZIP_PROGRAM -9 $SQLITE_FILE_BACKUP
 	else
         echo "SQLite Dump failed! (return code of SQLite: $SQLite_RET_CODE)" 1>&2
@@ -331,7 +331,7 @@ function backup_mwdir {
     logprint "Compressing MediaWiki installation directory to $MWDIR_BACKUP"
 	INSTALL_DIR_PARENT="$(dirname "$INSTALL_DIR")"
 	INSTALL_DIR_BASENAME="$(basename "$INSTALL_DIR")"
-    if [ -d $INSTALL_DIR_PARENT ];
+    if [ -d "$INSTALL_DIR_PARENT" ];
 	then
         cd "$INSTALL_DIR_PARENT"
 	    tar --use-compress-program=pbzip2 -cf "$MWDIR_BACKUP" "$INSTALL_DIR_BASENAME"
@@ -350,7 +350,7 @@ get_localsettings_vars
 toggle_read_only_on
 
 # Backup
-BACKUP_PREFIX=$BACKUP_SUBDIR/$BACKUP_FILENAME_PREFIX
+BACKUP_PREFIX="$BACKUP_SUBDIR/$BACKUP_FILENAME_PREFIX"
 if [ "$DB_TYPE" != 'sqlite' ]; then
     export_sql
 else
